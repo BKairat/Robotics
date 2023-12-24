@@ -8,9 +8,9 @@ import numpy as np
 from task import Sort
 
 
-rob = Robot(robCRS97(), Camera(), start=False)
+rob = Robot(robCRS97(), Camera(), start=True)
+cubes, cube_ids, box, box_ids = rob.camera.get_cubes_boxes()
+rob.camera.show_aruco()
+algo = Sort(rob, cubes, cube_ids, box, box_ids)
+algo.run()
 rob.end()
-# cubes, cube_ids, box, box_ids  = rob.camera.get_cubes_boxes()
-# rob.camera.show_aruco()
-# proc = Sort(rob, cubes, cube_ids, box, box_ids)
-# proc.run()

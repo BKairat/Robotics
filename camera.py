@@ -75,13 +75,6 @@ class Camera():
 
     
     def get_cubes_boxes(self):
-        '''
-        Compute transformation from camera to target(aruco marker)
-        Arg:
-            image: name of image from where we get camera translation
-        Return:
-            list of aruco markers ids and theirs tvecs and rotation angle for gripper roll
-        '''
         image = self.get_image()
 
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
