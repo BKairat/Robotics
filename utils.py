@@ -27,7 +27,7 @@
 import numpy as np
 
 def message(m):
-    print("\n\nINFO: "+m+"\n\n")
+    print("\n[INFO]: "+m+"\n")
 
 
 def param_correction(start, params, order):

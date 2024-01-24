@@ -5,6 +5,7 @@ import PyCapture2
 import numpy as np
 import math
 import matplotlib.pyplot as plt 
+from task import Object
 
 
 def rotationMatrixToEulerAngles(R):  
@@ -36,23 +37,24 @@ class Camera():
         rgb_cv_image = np.array(image.getData(), dtype="uint8").reshape((image.getRows(), image.getCols(), 3));
         return cv2.cvtColor(rgb_cv_image, cv2.COLOR_RGB2BGR)
     
-    def show_image(self):
+    def show_image(self, path=None):
         img = self.get_image()
-        plt.imshow(img)
+        img_ = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        plt.imshow(img_)
         plt.show()
-    
+        if path:
+            cv2.imwrite(path, img)
+
     @staticmethod    
-    def scale(corners, factor):
-        ret = []
-        scale=np.array([[factor, 0], [0, factor]])
-        for polygon in corners:
-            center = np.mean(polygon, axis=0)
-            polygon = polygon - center
-            polygon = np.matmul(polygon, scale) 
-            ret.append(np.array(polygon))
-        return tuple(ret)
+    def scale(polygon, scale_factor):
+        center = np.mean(polygon, axis=0)
+        translated_polygon = polygon - center
+        scaled_polygon = translated_polygon * scale_factor
+        final_polygon = scaled_polygon + center
+        return final_polygon
+
         
-    def show_aruco(self):
+    def show_aruco(self, path=None):
         image = self.get_image()
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -62,19 +64,20 @@ class Camera():
         
         parameters.adaptiveThreshConstant = 30
         (corners, ids, _) = cv2.aruco.detectMarkers(gray, aruco_dict, parameters = parameters)
-        print("corners",corners)
-        
-        new = self.scale(corners, 1.72)
-        print("NEW",new)
-
         cv2.aruco.drawDetectedMarkers(image, corners, ids)
-        cv2.aruco.drawDetectedMarkers(image, new)
 
         plt.imshow(image)
         plt.show()
-
+        if path:
+            cv2.imwrite(path, image)
+    
     
     def get_cubes_boxes(self):
+        '''
+        Compute transformation from camera to target(aruco marker)
+        Return:
+            list of aruco markers ids and theirs tvecs and rotation angle for gripper roll
+        '''
         image = self.get_image()
 
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -82,7 +85,7 @@ class Camera():
         aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_1000)
         parameters = cv2.aruco.DetectorParameters_create()
         parameters.adaptiveThreshConstant = 30
-        (corners, ids, rejected) = cv2.aruco.detectMarkers(gray, aruco_dict, parameters = parameters)
+        (corners, ids, _) = cv2.aruco.detectMarkers(gray, aruco_dict, parameters = parameters)
 
         camera_matrix = np.array(
             [
@@ -105,22 +108,31 @@ class Camera():
             rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(
                 corners[i], 0.04, camera_matrix, distCoeffs=distortion
             )
-
+            corners_shifted = np.concatenate([corners[i][:, 2:, :], corners[i][:, :2, :]], axis=1)
+            _, tvec_shifted, _ = cv2.aruco.estimatePoseSingleMarkers(
+                corners_shifted, 0.04, camera_matrix, distCoeffs=distortion
+            )
+            
             rotation_matrix, _ = cv2.Rodrigues(rvec)
             roll = rotationMatrixToEulerAngles(rotation_matrix)
-            x, y, z = tvec[0][0]  
+            x1, y1, z1 = tvec[0][0]  
+            x2, y2, z2 = tvec_shifted[0][0]
+            x, y, z = (x1+x2)/2, (y1+y2)/2, (z1+z2)/2
 
             if int(ids[i][0]) < 4: #ids is 0,1,2,3
-                cubes_list.append(np.array([int(ids[i][0]),x,y,z,roll[2]]))   
+                cubes_list.append(Object(id=int(ids[i][0]),
+                                         conf=np.array([x,y,z,roll[2]]),
+                                         corn=self.scale(corners[i].reshape((4,2)), 1.5).reshape((4,2))))   
                 if int(ids[i][0]) not in cubes_ids:
                     cubes_ids.append(int(ids[i][0]))
             else:
-                boxes_list.append(np.array([int(ids[i][0]),x,y,z,roll[2]]))
+                boxes_list.append(Object(id=int(ids[i][0]),
+                                         conf=np.array([x,y,z,roll[2]]),
+                                         corn=corners[i].reshape(4,2)))  
                 if int(ids[i][0]) not in boxes_ids:
                     boxes_ids.append(int(ids[i][0]))
         return cubes_list, cubes_ids, boxes_list, boxes_ids
 
-    # @staticmethod
     def homography(self, tvec_C):
         H = np.array([[ -6.96742407e+02,   9.92215832e+00,   5.43884477e+02],
                     [  2.68609387e+00,   6.98686793e+02,  -1.76555556e+02],

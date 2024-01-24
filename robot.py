@@ -11,7 +11,6 @@ from pyrocon.robCRSdkt import robCRSdkt
 import cv2
 
 from utils import message
-# from shapely.geometry import Polygon
 from camera import Camera
 
 
@@ -22,7 +21,6 @@ class Robot():
         self.camera = camera
         if start:
             self.com.init()
-
 
     def move_to(self, pos, height, pitch, roll):
         pos = np.array([pos[0],pos[1],pos[2], 0, pitch, roll])
@@ -48,25 +46,26 @@ class Robot():
         return pos
     
     def move_to_box(self, box):
-        roll = box.obj[3]
+        roll = box.conf[3]
         pitch = 90
-        tvec_C = box.obj[:3]
-        tvec_FK = self.camera.homography(np.append(tvec_C[:2], [1]))
+        tvec_C = box.conf[:2]
+        tvec_FK = self.camera.homography(np.append(tvec_C, [1]))
         self.move_to(tvec_FK, 200, pitch, roll)
         self.release()
         
         
     def grab_cube(self, cube):
-        roll = cube.obj[3]
+        roll = cube.conf[3]
         pitch = 90
-        tvec_C = cube.obj[:3]
-        tvec_FK = self.camera.homography(np.append(tvec_C[:2], [1]))
-        self.move_to(tvec_FK, 150, pitch, roll)
+        tvec_C = cube.conf[:2]
+        tvec_FK = self.camera.homography(np.append(tvec_C, [1]))
+        self.move_to(tvec_FK, 200, pitch, roll)
         self.move_to(tvec_FK, 45, pitch, roll)
         self.grab()
+        self.move_to(tvec_FK, 200, pitch, roll)
     
     def grab(self):
-        robCRSgripper(self.com, 0.9)
+        robCRSgripper(self.com, 1)
         self.com.wait_ready()
 
     def release(self):
@@ -77,14 +76,14 @@ class Robot():
         self.com.soft_home()
 
     def photo_pos(self):
-        self.com.soft_home()
         irc = self.com.axis_get_pos()[1]
         irc[2] = -40000
         self.com.move_to_pos(irc)
         self.com.wait_ready()
     
+    def reset_motors(self):
+        self.com.reset_motors()
+    
     def end(self):
         self.com.soft_home()
         self.com.rcon.close()
-        message("please turn off the robot")
-    
