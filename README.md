@@ -12,15 +12,24 @@ This project created for aruco cubes sorting task by CRS robot.
   + [Pyrocon](https://github.com/cvut/pyrocon) (already here)
 ---
 Example of usage:
+
+<br>
+
 ``python main.py`` + ``mode``
+
+<br>
+
 modes:
-``sort_a`` in this mode will run the robot for sorting cubes that are not touching.
-``sort_b`` in this mode will run the robot for sorting cubes that can touch.
-``start`` prepare robot to use it.
-``init`` set robot in init configuration.
-``reset`` reset its motors.
-``end`` prepare robot before it would be switched off.
-``show`` show image from camera, requires other argeuments: "1" to detect aruco amrkers or "0" to not, path where the imag will be saved ``d`` default path ``images/output_image.jpg``, ``None`` to not save or you can write yourth one.
+
+<br>
+
++ ``sort_a`` in this mode will run the robot for sorting cubes that are not touching.
++ ``sort_b`` in this mode will run the robot for sorting cubes that can touch.
++ ``start`` prepare robot to use it.
++ ``init`` set robot in init configuration.
++ ``reset`` reset its motors.
++ ``end`` prepare robot before it would be switched off.
++ ``show`` show image from camera, requires other argeuments: "1" to detect aruco amrkers or "0" to not, path where the imag will be saved ``d`` default path ``images/output_image.jpg``, ``None`` to not save or you can write yourth one.
 
 <br>
 <p align="center">
